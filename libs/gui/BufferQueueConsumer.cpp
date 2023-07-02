@@ -340,21 +340,23 @@ status_t BufferQueueConsumer::detachBuffer(int slot) {
                     "(state = %s)", slot, mSlots[slot].mBufferState.string());
             return BAD_VALUE;
         }
-        if (mCore->mBufferReleasedCbEnabled) {
-            listener = mCore->mConnectedProducerListener;
-        }
 
         mSlots[slot].mBufferState.detachConsumer();
         mCore->mActiveBuffers.erase(slot);
         mCore->mFreeSlots.insert(slot);
         mCore->clearBufferSlotLocked(slot);
+        listener = mCore->mConnectedProducerListener;
         mCore->mDequeueCondition.notify_all();
         VALIDATE_CONSISTENCY();
     }
-
-    if (listener) {
+    // MIUI ADD: START
+    // Call back without lock held
+    if (listener != nullptr) {
+        BQ_LOGE("BQ detachBuffer %d",slot);
         listener->onBufferDetached(slot);
     }
+    // MI ADD: END
+
     return NO_ERROR;
 }
 
